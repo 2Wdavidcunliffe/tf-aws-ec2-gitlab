@@ -1,0 +1,4 @@
+
+terraform/.terraform/
+
+terraform/scripts/ec2.pem
