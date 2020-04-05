@@ -146,7 +146,7 @@ resource "aws_lb" "gitlab_web" {
   enable_deletion_protection = false
 }
 
-resource "aws_lb_listener" "gitlab_web" {
+resource "aws_lb_listener" "gitlab_web_ssl" {
   load_balancer_arn = aws_lb.gitlab_web.arn
   port              = "443"
   protocol          = "HTTPS"
@@ -156,6 +156,22 @@ resource "aws_lb_listener" "gitlab_web" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.gitlab_web.arn
+  }
+}
+
+resource "aws_lb_listener" "gitlab_web_http_redirect" {
+  load_balancer_arn = aws_lb.gitlab_web.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+      type = "redirect"
+
+      redirect {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
   }
 }
 

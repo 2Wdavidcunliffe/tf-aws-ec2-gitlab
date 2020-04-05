@@ -130,3 +130,28 @@ resource "aws_iam_user_policy" "atlantis" {
 resource "aws_iam_access_key" "atlantis" {
   user = aws_iam_user.atlantis.name
 }
+
+resource "aws_iam_role" "_2ndWatch_role" {
+  name = "2ndWatch"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "_2ndwatch-poweruser-attach" {
+  role       = aws_iam_role._2ndWatch_role.name
+  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+}
