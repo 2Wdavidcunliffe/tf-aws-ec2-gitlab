@@ -416,7 +416,7 @@ gitlab_rails['backup_path'] = "${backup_path}"
 # gitlab_rails['backup_pg_schema'] = 'public'
 
 ###! The duration in seconds to keep backups before they are allowed to be deleted
-# gitlab_rails['backup_keep_time'] = 604800
+gitlab_rails['backup_keep_time'] = 604800
 
 gitlab_rails['backup_upload_connection'] = {
   'provider' => 'AWS',
@@ -518,8 +518,8 @@ gitlab_rails['backup_multipart_chunk_size'] = 104857600
 #### Change the initial default admin password and shared runner registration tokens.
 ####! **Only applicable on initial setup, changing these settings after database
 ####!   is created and seeded won't yield any change.**
-gitlab_rails['initial_root_password'] = "GoogleIsAwsome!"
-gitlab_rails['initial_shared_runners_registration_token'] = "SomeFantasticToken!!!"
+# gitlab_rails['initial_root_password'] = "GoogleIsAwsome1982"
+# gitlab_rails['initial_shared_runners_registration_token'] = "SomeFantasticToken1982"
 
 #### Set path to an initial license to be used while bootstrapping GitLab.
 ####! **Only applicable on initial setup, future license updations need to be done via UI.

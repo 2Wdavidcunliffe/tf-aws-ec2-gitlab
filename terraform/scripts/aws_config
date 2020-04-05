@@ -1,0 +1,4 @@
+[profile 2w-sandbox]
+role_arn=arn:aws:iam::150451159796:role/AWSLZAtlantisAdminExecutionRole
+source_profile=atlantis
+region=us-east-2

@@ -1,0 +1,50 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetResourcePolicy",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:ListSecretVersionIds"
+            ],
+            "Resource": [
+                "arn:aws:secretsmanager:*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParametersByPath",
+                "ssm:GetParameters",
+                "ssm:GetParameter"
+            ],
+            "Resource": [
+                "arn:aws:ssm:*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sts:*"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:role/AtlantisAdminExecutionRole",
+                "arn:aws:iam::*:role/AtlantisPowerUserExecutionRole",
+                "arn:aws:iam::*:role/2ndWatch"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetRandomPassword",
+                "secretsmanager:ListSecrets",
+                "sts:DecodeAuthorizationMessage",
+                "sts:GetAccessKeyInfo",
+                "sts:GetCallerIdentity",
+                "ssm:DescribeParameters"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
