@@ -1,7 +1,7 @@
 locals {
   region          = "us-east-1"
   dns_prefix      = "gitlab"
-  s3_bucket       = "gitlab.2wdc.net"
+  s3_bucket       = "gitlab-backup-2wdc"
   ssh_private_key = "./scripts/ec2.pem"
 
   default_tags = {

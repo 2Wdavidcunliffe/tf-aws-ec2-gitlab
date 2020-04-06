@@ -66,3 +66,50 @@ resource "aws_instance" "gitlab" {
 
   depends_on = [module.bastion.elb_ip]
 }
+
+resource "aws_s3_bucket" "gitlab-bucket" {
+  bucket = local.s3_bucket
+  acl    = "bucket-owner-full-control"
+
+  # Comment out prevent_destroy below in lifecycle rule 
+  # before enabling this function
+  # http://salewski.github.io/2017/04/30/terraform-howto-delete-a-non-empty-aws-s3-bucket.html
+  force_destroy = false
+
+  versioning {
+    enabled = true
+  }
+
+  lifecycle_rule {
+    id      = "log"
+    enabled = false
+
+    prefix = "logs/"
+
+    tags = {
+      rule      = "log"
+      autoclean = false
+    }
+
+    transition {
+      days          = "30"
+      storage_class = "STANDARD_IA"
+    }
+
+    transition {
+      days          = "60"
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = "90"
+    }
+  }
+
+  lifecycle {
+  # Any Terraform plan that includes a destroy of this resource will
+  # result in an error message.
+  # http://salewski.github.io/2017/04/30/terraform-howto-delete-a-non-empty-aws-s3-bucket.html
+  prevent_destroy = true
+  }
+}

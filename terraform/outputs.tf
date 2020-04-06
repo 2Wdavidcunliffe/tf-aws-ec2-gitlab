@@ -9,7 +9,7 @@ output "gitlab_values" {
 
 output "bastion_values" {
   value = {
-    "SSH_INFO" = "ssh ec2@${module.bastion.elb_ip} -i ~/Downloads.ec2.pem}",
+    "SSH_INFO" = "ssh ec2-user@${trimsuffix("ssh.${data.aws_route53_zone.selected.name}", ".")} -i ~/Downloads.ec2.pem",
     "LOG_BUCKET" = module.bastion.bucket_name
   }
 }
