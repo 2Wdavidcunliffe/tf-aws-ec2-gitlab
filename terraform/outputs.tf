@@ -1,16 +1,8 @@
 output "gitlab_values" {
   value = {
-    "PRV_IP"   = aws_instance.gitlab.private_ip,
     "HTTP"     = "https://${aws_route53_record.gitlab_web.name}",
-    "SSH_INFO" = "ssh ubuntu@${aws_instance.gitlab.private_ip} -i ~/Downloads/ec2.pem",
+    "SSH_INFO" = "ssh ubuntu@${aws_route53_record.gitlab_ssh.fqdn} -i ~/Downloads/ec2.pem",
     "BACKUP_BUCKET" = local.s3_bucket
-  }
-}
-
-output "bastion_values" {
-  value = {
-    "SSH_INFO" = "ssh ec2-user@${trimsuffix("ssh.${data.aws_route53_zone.selected.name}", ".")} -i ~/Downloads.ec2.pem",
-    "LOG_BUCKET" = module.bastion.bucket_name
   }
 }
 

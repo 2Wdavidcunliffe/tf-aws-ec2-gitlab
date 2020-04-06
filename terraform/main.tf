@@ -1,22 +1,3 @@
-module "bastion" {
-  source  = "Guimove/bastion/aws"
-  version = "1.2.0"
-  bucket_name = "gitlab-bastion-2wdc"
-  region = local.region
-  vpc_id = module.vpc.vpc_id
-  is_lb_private = false
-  bastion_host_key_pair = "ec2"
-  create_dns_record = true
-  hosted_zone_name = data.aws_route53_zone.selected.zone_id
-  bastion_record_name = trimsuffix("ssh.${data.aws_route53_zone.selected.name}", ".")
-  elb_subnets = module.vpc.public_subnets
-  auto_scaling_group_subnets = module.vpc.public_subnets
-  tags = {
-    "name" = "gitlab_bastion",
-    "description" = "allows ssh access into vpc"
-  }
-}
-
 resource "aws_instance" "gitlab" {
   ami                  = data.aws_ami.ubuntu.id
   instance_type        = "t3.medium"
@@ -35,25 +16,8 @@ resource "aws_instance" "gitlab" {
     aws_credentials       = data.template_file.aws_credentials.rendered
     gitlab_root_pass      = var.gitlab_root_pass
     gitlab_runners_token  = var.gitlab_runners_token
+    gitlab_rb             = data.template_file.gitlab_config.rendered
   })
-
-
-  provisioner "file" {
-    content     = data.template_file.gitlab_config.rendered
-    destination = "/tmp/gitlab.rb"
-
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(local.ssh_private_key)
-      host        = self.private_ip
-      timeout     = "10m"
-
-      bastion_host        = module.bastion.elb_ip
-      bastion_user        = "ec2-user"
-      bastion_private_key = file(local.ssh_private_key)
-    }
-  }
 
   lifecycle {
     ignore_changes = [
@@ -63,8 +27,6 @@ resource "aws_instance" "gitlab" {
   tags = {
     Name = "Gitlab-Main"
   }
-
-  depends_on = [module.bastion.elb_ip]
 }
 
 resource "aws_s3_bucket" "gitlab-bucket" {

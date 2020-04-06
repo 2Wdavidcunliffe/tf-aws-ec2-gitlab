@@ -85,6 +85,15 @@ resource "aws_security_group" "secgroup_gitlab_web_lb" {
 	}
 
   ingress {
+		from_port = 22
+		to_port = 22
+		protocol = "tcp"
+		cidr_blocks = [
+			"0.0.0.0/0"
+		]
+	}
+
+  ingress {
 		from_port = 8888
 		to_port = 8888
 		protocol = "tcp"
@@ -136,47 +145,10 @@ resource "aws_acm_certificate_validation" "domain_cert" {
   validation_record_fqdns = aws_route53_record.validation.*.fqdn
 }
 
-resource "aws_lb" "gitlab_web" {
-  name               = "gitlab-web"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.secgroup_gitlab_web_lb.id]
-  subnets            = module.vpc.public_subnets
+############################################################################################################
 
-  enable_deletion_protection = false
-}
-
-resource "aws_lb_listener" "gitlab_web_ssl" {
-  load_balancer_arn = aws_lb.gitlab_web.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate.domain_cert.id
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.gitlab_web.arn
-  }
-}
-
-resource "aws_lb_listener" "gitlab_web_http_redirect" {
-  load_balancer_arn = aws_lb.gitlab_web.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-      type = "redirect"
-
-      redirect {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
-  }
-}
-
-resource "aws_lb_target_group" "gitlab_web" {
-  name     = "gitlab-web"
+resource "aws_lb_target_group" "gitlab_alb_web" {
+  name     = "gitlab-alb"
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
@@ -192,10 +164,49 @@ resource "aws_lb_target_group" "gitlab_web" {
   }
 }
 
-resource "aws_lb_target_group_attachment" "gitlab_web" {
-  target_group_arn = aws_lb_target_group.gitlab_web.arn
+resource "aws_lb_target_group_attachment" "gitlab_alb_web" {
+  target_group_arn = aws_lb_target_group.gitlab_alb_web.arn
   target_id        = aws_instance.gitlab.id
   port             = 80
+}
+
+resource "aws_lb" "gitlab_alb_web" {
+  name               = "gitlab-alb-web"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.secgroup_gitlab_web_lb.id]
+  subnets            = module.vpc.public_subnets
+
+  enable_deletion_protection = false
+}
+
+resource "aws_lb_listener" "gitlab_alb_ssl" {
+  load_balancer_arn = aws_lb.gitlab_alb_web.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.domain_cert.id
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.gitlab_alb_web.arn
+  }
+}
+
+resource "aws_lb_listener" "gitlab_web_http_redirect" {
+  load_balancer_arn = aws_lb.gitlab_alb_web.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+      type = "redirect"
+
+      redirect {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+  }
 }
 
 resource "aws_route53_record" "gitlab_web" {
@@ -204,8 +215,8 @@ resource "aws_route53_record" "gitlab_web" {
   type    = "A"
 
   alias {
-    name                   = aws_lb.gitlab_web.dns_name
-    zone_id                = aws_lb.gitlab_web.zone_id
+    name                   = aws_lb.gitlab_alb_web.dns_name
+    zone_id                = aws_lb.gitlab_alb_web.zone_id
     evaluate_target_health = true
   }
 
@@ -213,6 +224,8 @@ resource "aws_route53_record" "gitlab_web" {
 
   depends_on = [aws_acm_certificate.domain_cert]
 }
+
+###########################################################################################################################
 
 resource "aws_lb" "atlantis_web" {
   name               = "atlantis-web"
@@ -268,6 +281,62 @@ resource "aws_route53_record" "atlantis_web" {
   alias {
     name                   = aws_lb.atlantis_web.dns_name
     zone_id                = aws_lb.atlantis_web.zone_id
+    evaluate_target_health = true
+  }
+
+  allow_overwrite = true
+
+  depends_on = [aws_acm_certificate.domain_cert]
+}
+
+#########################################################################################
+
+resource "aws_lb_target_group" "gitlab_nlb_ssh" {
+  name     = "gitlab-nlb-ssh"
+  port     = 22
+  protocol = "TCP"
+  vpc_id   = module.vpc.vpc_id
+
+  health_check {
+    port     = "traffic-port"
+    protocol = "TCP"
+  }
+}
+
+resource "aws_lb_target_group_attachment" "gitlab_nlb_ssh" {
+  target_group_arn = aws_lb_target_group.gitlab_nlb_ssh.arn
+  target_id        = aws_instance.gitlab.id
+  port             = 22
+}
+
+resource "aws_lb" "gitlab_nlb" {
+  name               = "gitlab-nlb-ssh"
+  internal           = false
+  load_balancer_type = "network"
+  subnets            = [module.vpc.public_subnets.0,module.vpc.public_subnets.1]
+
+  enable_deletion_protection = false
+}
+
+resource "aws_lb_listener" "gitlab_nlb_ssh" {
+  load_balancer_arn = aws_lb.gitlab_nlb.arn
+  port              = "22"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.gitlab_nlb_ssh.arn
+  }
+}
+
+resource "aws_route53_record" "gitlab_ssh" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = trimsuffix("ssh.${data.aws_route53_zone.selected.name}", ".")
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.gitlab_nlb.dns_name
+    zone_id                = aws_lb.gitlab_nlb.zone_id
     evaluate_target_health = true
   }
 

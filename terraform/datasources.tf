@@ -49,15 +49,3 @@ data "template_file" "gitlab_config" {
     backup_upload_remote_directory = local.s3_bucket
   }
 }
-
-# data "template_file" "userdata" {
-#   template = file("${path.module}/scripts/userdata.sh.tpl")
-
-#   vars = {
-#     terraform_version     = var.terraform_version
-#     atlantis_version      = var.atlantis_version
-#     atlantis_repo_yaml    = data.template_file.atlantis_repo_conf.rendered
-#     aws_config            = data.template_file.aws_config.rendered
-#     aws_credentials       = data.template_file.aws_credentials.rendered
-#   }
-# }

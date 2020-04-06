@@ -23,11 +23,10 @@ GITLAB_ROOT_PASSWORD="${gitlab_root_pass}" GITLAB_SHARED_RUNNERS_REGISTRATION_TO
 
 
 echo "===================Configuring Gitlab====================="
-while [ ! -f /tmp/gitlab.rb ]
-do
-    echo "Still waiting on gitlab.rb file upload..."
-    sleep 2 # or less like 0.2
-done
+tee /tmp/gitlab.rb<<EOF >/dev/null
+${gitlab_rb}
+EOF
+
 cp /tmp/gitlab.rb /etc/gitlab/gitlab.rb
 gitlab-ctl reconfigure
 gitlab-ctl restart
@@ -105,7 +104,7 @@ Description=Atlantis, a tool for safely collaborating on Terraform: https://atla
 User=atlantis
 ExecStart=/usr/local/bin/atlantis server --config=/usr/local/atlantis/config.yaml
 Restart=always
-RestartSec=3
+RestartSec=30
 [Install]
 WantedBy=gitlab-runsvdir.target
 EOF
