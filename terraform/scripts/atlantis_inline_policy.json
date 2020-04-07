@@ -29,8 +29,6 @@
                 "sts:*"
             ],
             "Resource": [
-                "arn:aws:iam::*:role/AtlantisAdminExecutionRole",
-                "arn:aws:iam::*:role/AtlantisPowerUserExecutionRole",
                 "arn:aws:iam::*:role/2ndWatch"
             ]
         },
@@ -45,6 +43,14 @@
                 "ssm:DescribeParameters"
             ],
             "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:*"
+            ],
+            "Resource": "*"
+
         }
     ]
 }
